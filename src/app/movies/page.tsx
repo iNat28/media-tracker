@@ -130,33 +130,35 @@ export default function MoviesPage() {
             className="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none ring-slate-900/20 transition focus:ring"
           />
 
-          <ul className="mt-6 grid gap-3">
-            {filteredCatalog.map((item) => {
-              const isInMyList = myList.some((listItem) => listItem.id === item.id);
+          <div className="mt-6 max-h-[34rem] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/40 p-3">
+            <ul className="grid gap-3">
+              {filteredCatalog.map((item) => {
+                const isInMyList = myList.some((listItem) => listItem.id === item.id);
 
-              return (
-                <li
-                  key={item.id}
-                  className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center"
-                >
-                  <div>
-                    <h2 className="text-lg font-semibold text-slate-900">{item.title}</h2>
-                    <p className="text-sm text-slate-600">
-                      {item.type} • {item.year} • {item.genre}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => addToList(item)}
-                    disabled={isInMyList}
-                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition enabled:hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                return (
+                  <li
+                    key={item.id}
+                    className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center"
                   >
-                    {isInMyList ? "Added" : "Add to My List"}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-900">{item.title}</h2>
+                      <p className="text-sm text-slate-600">
+                        {item.type} • {item.year} • {item.genre}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => addToList(item)}
+                      disabled={isInMyList}
+                      className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition enabled:hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    >
+                      {isInMyList ? "Added" : "Add to My List"}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
 
           {filteredCatalog.length === 0 ? (
             <p className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
