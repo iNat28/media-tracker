@@ -17,7 +17,7 @@ export function Button({
   disabled,
   ...props 
 }: ButtonProps) {
-  const baseStyles = "rounded-lg font-semibold transition disabled:cursor-not-allowed flex items-center justify-center gap-2";
+  const baseStyles = "rounded-lg font-semibold transition disabled:cursor-not-allowed flex items-center justify-center gap-2 leading-none";
   
   const variants = {
     primary: "bg-slate-900 text-white hover:bg-slate-700 disabled:bg-slate-300",
@@ -28,9 +28,9 @@ export function Button({
   };
 
   const sizes = {
-    sm: "px-3 py-2 text-sm",
-    md: "px-5 py-2.5 text-sm",
-    lg: "px-6 py-3 text-base",
+    sm: "px-3 h-9 text-sm",
+    md: "px-5 h-11 text-sm",
+    lg: "px-6 h-13 text-base",
   };
 
   const widthStyle = fullWidth ? "w-full" : "w-auto";

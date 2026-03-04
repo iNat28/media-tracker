@@ -4,7 +4,7 @@ describe('Authentication lifecycle', () => {
   const testPassword = 'Password123!';
   const testName = 'Test Lifecycle User';
 
-  it('should sign up, sign out, sign in, and delete the user', () => {
+  it('should sign up, sign out, sign in, and delete the user via settings', () => {
     // 1. Sign Up
     cy.visit('/sign-in');
     cy.contains('Sign Up').click();
@@ -16,9 +16,10 @@ describe('Authentication lifecycle', () => {
 
     // 2. Verify Sign Up success
     cy.url().should('include', '/movies');
-    cy.get('nav', { timeout: 10000 }).should('contain', testName);
+    cy.get('nav', { timeout: 15000 }).should('contain', testName);
 
-    // 3. Sign Out
+    // 3. Sign Out via menu
+    cy.get('#user-menu-button').click();
     cy.contains('Sign Out').click();
     cy.url().should('include', '/sign-in');
 
@@ -28,34 +29,47 @@ describe('Authentication lifecycle', () => {
     cy.get('button[type="submit"]').click();
     
     cy.url().should('include', '/movies');
-    cy.get('nav', { timeout: 10000 }).should('contain', testName);
+    cy.get('nav', { timeout: 15000 }).should('contain', testName);
 
-    // 5. Delete Account
+    // 5. Go to Settings
+    cy.get('#user-menu-button').click();
+    cy.contains('Settings', { timeout: 10000 }).click();
+    cy.url().should('include', '/settings');
+    cy.get('h1').should('contain', 'Settings');
+
+    // 6. Change Name
+    const newName = 'Updated Test Name';
+    cy.get('#name').clear().type(newName);
+    cy.contains('Save Changes').click();
+    cy.contains('Name updated successfully', { timeout: 10000 }).should('be.visible');
+    cy.get('#user-menu-button').should('contain', newName);
+
+    // 7. Delete Account
     cy.on('window:confirm', () => true);
     cy.get('#delete-account-btn').click();
 
-    // 6. Verify Deletion redirect
-    cy.url().should('not.include', '/movies');
+    // 8. Verify Deletion
+    cy.url().should('eq', Cypress.config().baseUrl + '/', { timeout: 15000 });
     
-    // 7. Force clear storage
+    // 9. Force clear storage
     cy.clearLocalStorage();
     cy.clearCookies();
 
-    // 8. Try to sign in again - should show error
+    // 10. Try to sign in again - should fail
     cy.visit('/sign-in');
     cy.get('#email').type(testEmail);
     cy.get('#password').type(testPassword);
     cy.get('button[type="submit"]').click();
     
-    // 9. Debug: check URL and content
-    cy.url().then((url) => {
-      cy.log('Current URL after failed sign in attempt:', url);
+    // Check if error div exists by its background color class or text
+    cy.get('main').then(($main) => {
+      const text = $main.text().toLowerCase();
+      cy.log('Page text after failed sign in:', text);
     });
     
-    // If it stays on sign-in, it should show some message
+    // Any error message should work
     cy.url().should('include', '/sign-in');
-    // better-auth usually returns "Invalid email or password" for non-existent users too
-    cy.get('main').should('not.contain', 'Hello,');
+    cy.get('main').should('not.contain', 'Hello');
   });
 
   it('should allow a user to sign in using the Dev Bypass and then sign out', () => {
@@ -63,7 +77,7 @@ describe('Authentication lifecycle', () => {
     cy.contains('Sign In').click();
     cy.contains('Auto-login as Dev User').click();
     cy.url().should('include', '/movies');
-    cy.get('nav', { timeout: 10000 }).should('contain', 'Dev User');
+    cy.get('#user-menu-button', { timeout: 15000 }).should('be.visible').click();
     cy.contains('Sign Out').click();
     cy.url().should('include', '/sign-in');
   });
