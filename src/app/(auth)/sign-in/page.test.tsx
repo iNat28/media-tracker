@@ -41,7 +41,53 @@ describe("SignInPage", () => {
     expect(screen.getByRole("heading", { name: /sign in/i })).toBeDefined();
   });
 
-  it("shows an error message when sign in fails", async () => {
+  it("shows validation error for invalid email", async () => {
+    render(<SignInPage />);
+    
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const submitButton = screen.getByRole("button", { name: /sign in/i });
+
+    fireEvent.change(emailInput, { target: { value: "invalid-email" } });
+    fireEvent.change(passwordInput, { target: { value: "password123" } });
+    fireEvent.click(submitButton);
+
+    expect(screen.getByText(/please enter a valid email address/i)).toBeDefined();
+    expect(authClient.signIn.email).not.toHaveBeenCalled();
+  });
+
+  it("shows validation error for short password", async () => {
+    render(<SignInPage />);
+    
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const submitButton = screen.getByRole("button", { name: /sign in/i });
+
+    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "short" } });
+    fireEvent.click(submitButton);
+
+    expect(screen.getByText(/password must be at least 8 characters long/i)).toBeDefined();
+    expect(authClient.signIn.email).not.toHaveBeenCalled();
+  });
+
+  it("shows validation error for missing name in sign up", async () => {
+    render(<SignInPage />);
+    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+    
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const submitButton = screen.getByRole("button", { name: /sign up/i });
+
+    fireEvent.change(emailInput, { target: { value: "test@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "password123" } });
+    fireEvent.click(submitButton);
+
+    expect(screen.getByText(/name is required/i)).toBeDefined();
+    expect(authClient.signUp.email).not.toHaveBeenCalled();
+  });
+
+  it("shows an error message when API sign in fails", async () => {
     // Setup mock failure
     vi.mocked(authClient.signIn.email).mockResolvedValue({
       error: { message: "Invalid email or password" },
@@ -62,7 +108,7 @@ describe("SignInPage", () => {
     });
   });
 
-  it("shows an error message when sign up fails", async () => {
+  it("shows an error message when API sign up fails", async () => {
     // Switch to sign up mode
     render(<SignInPage />);
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));

@@ -15,10 +15,34 @@ export default function SignInPage() {
 
     const isDevelopment = process.env.NODE_ENV === "development";
 
+    const validateForm = () => {
+        if (isSignUp && !name.trim()) {
+            setError("Name is required");
+            return false;
+        }
+        if (!email.trim()) {
+            setError("Email is required");
+            return false;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setError("Please enter a valid email address");
+            return false;
+        }
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters long");
+            return false;
+        }
+        return true;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
         setError("");
+
+        if (!validateForm()) return;
+
+        setLoading(true);
 
         try {
             if (isSignUp) {
@@ -121,7 +145,7 @@ export default function SignInPage() {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
                     {isSignUp && (
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-slate-700">Name</label>
