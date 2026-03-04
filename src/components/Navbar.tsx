@@ -16,6 +16,19 @@ export function Navbar() {
     router.refresh();
   };
 
+  const handleDeleteAccount = async () => {
+    if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+      try {
+        await authClient.deleteUser();
+        router.push("/");
+        router.refresh();
+      } catch (error) {
+        console.error("Failed to delete account:", error);
+        alert("Failed to delete account. Please try again.");
+      }
+    }
+  };
+
   return (
     <nav className="bg-white border-b border-slate-200">
       <div className="mx-auto max-w-6xl px-6 py-5 flex justify-between items-center">
@@ -49,6 +62,13 @@ export function Navbar() {
                 >
                   Sign Out
                 </Button>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="text-xs text-red-500 hover:text-red-700 font-medium transition"
+                  id="delete-account-btn"
+                >
+                  Delete Account
+                </button>
               </div>
             ) : (
               <Link
