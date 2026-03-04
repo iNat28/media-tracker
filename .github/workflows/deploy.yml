@@ -2,15 +2,31 @@ name: Deploy to Cloudflare
 
 on:
   push:
-    branches: ["main", "preview", "dev"] # Listens to all 3 branches!
+    branches: ["main", "preview"] # Removed "dev" from automatic triggers
   workflow_dispatch:
+    inputs:
+      branch_to_deploy:
+        description: 'Which branch do you want to deploy?'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - preview
+          - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # This logic says: "Run if it's NOT a push to dev OR if I manually triggered it"
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_name != 'dev')
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Use the branch selected in the manual dropdown, or the default push branch
+          ref: ${{ github.event.inputs.branch_to_deploy || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -21,16 +37,16 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # 1. Dynamically name the project based on the GitHub branch
       - name: Set Project Name
         run: |
-          if [ "${{ github.ref_name }}" == "main" ]; then
+          # Use the manual input if it exists, otherwise use the branch name
+          TARGET_BRANCH="${{ github.event.inputs.branch_to_deploy || github.ref_name }}"
+          if [ "$TARGET_BRANCH" == "main" ]; then
             echo "PROJECT_NAME=media-tracker" >> $GITHUB_ENV
           else
-            echo "PROJECT_NAME=media-tracker-${{ github.ref_name }}" >> $GITHUB_ENV
+            echo "PROJECT_NAME=media-tracker-$TARGET_BRANCH" >> $GITHUB_ENV
           fi
 
-      # 2. Generate the Cloudflare config file on the fly
       - name: Create Cloudflare Config
         run: |
           echo '{
@@ -38,6 +54,10 @@ jobs:
             "main": ".open-next/worker.js",
             "compatibility_date": "2024-12-30",
             "compatibility_flags": ["nodejs_compat"],
+            "vars": {
+              "DATABASE_URL": "PLACEHOLDER",
+              "DATABASE_URL_UNPOOLED": "PLACEHOLDER"
+            },
             "assets": {
               "directory": ".open-next/assets",
               "binding": "ASSETS"
