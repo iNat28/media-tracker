@@ -1,13 +1,11 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { CatalogItem, sampleCatalog } from "@/lib/mock-catalog";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
-import { Spinner } from "@/components/ui/Spinner";
 
 type WatchStatus = "plan-to-watch" | "watching" | "watched";
 
@@ -22,16 +20,9 @@ const STATUS_OPTIONS: { value: WatchStatus; label: string }[] = [
 ];
 
 export default function MoviesPage() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const [query, setQuery] = useState("");
   const [myList, setMyList] = useState<ListItem[]>([]);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.push("/sign-in?callbackURL=/movies");
-    }
-  }, [session, isPending, router]);
 
   const filteredCatalog = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -65,13 +56,7 @@ export default function MoviesPage() {
     setMyList((currentList) => currentList.filter((item) => item.id !== itemId));
   };
 
-  if (isPending || !session) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Spinner />
-      </div>
-    );
-  }
+  if (!session) return null;
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[2fr_1fr] px-6">

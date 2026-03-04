@@ -87,7 +87,7 @@ model Movie {
 
 model WatchLog {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   movie     Movie    @relation(fields: [movieId], references: [id])
   movieId   Int
@@ -100,9 +100,9 @@ model WatchLog {
 }
 
 model Follows {
-  follower    User   @relation("follower", fields: [followerId], references: [id])
+  follower    User   @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
   followerId  String
-  following   User   @relation("following", fields: [followingId], references: [id])
+  following   User   @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
   followingId String
 
   @@id([followerId, followingId])

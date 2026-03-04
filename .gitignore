@@ -47,3 +47,4 @@ next-env.d.ts
 .dev.vars
 /.open-next
 /.gemini
+cypress/screenshots

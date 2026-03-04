@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 export default function SettingsPage() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const [name, setName] = useState("");
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
@@ -47,26 +47,22 @@ export default function SettingsPage() {
   const handleDeleteAccount = async () => {
     if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
       try {
-        await authClient.deleteUser();
+        const { error: deleteError } = await authClient.deleteUser();
+        
+        if (deleteError) {
+          setError(deleteError.message || "Failed to delete account");
+          return;
+        }
+        
         window.location.href = "/";
-      } catch (error) {
-        console.error("Failed to delete account:", error);
-        alert("Failed to delete account. Please try again.");
+      } catch (err) {
+        console.error("Failed to delete account:", err);
+        setError("An unexpected error occurred during deletion.");
       }
     }
   };
 
-  if (isPending) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-900 border-t-transparent"></div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return null; // Layout handles redirect
-  }
+  if (!session) return null;
 
   return (
     <div className="mx-auto max-w-2xl px-6">

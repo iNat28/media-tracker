@@ -41,7 +41,11 @@ export function Button({
       disabled={disabled || isLoading}
       {...props}
     >
-      {isLoading ? "Please wait..." : children}
+      {isLoading ? (
+        "Please wait..."
+      ) : (
+        <span className="translate-y-[1px]">{children}</span>
+      )}
     </button>
   );
 }

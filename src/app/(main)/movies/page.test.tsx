@@ -23,16 +23,14 @@ describe("MoviesPage", () => {
     vi.clearAllMocks();
   });
 
-  it("shows loading spinner and doesn't show content when guest (redirecting)", () => {
+  it("returns null for guest users", () => {
     vi.mocked(authClient.useSession).mockReturnValue({
       data: null,
       isPending: false,
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    render(<MoviesPage />);
-    
-    // Should NOT show the page title
-    expect(screen.queryByText(/Movies & TV/i)).toBeNull();
+    const { container } = render(<MoviesPage />);
+    expect(container.firstChild).toBeNull();
   });
 
   it("renders the movies search page when signed in", () => {

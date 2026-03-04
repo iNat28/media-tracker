@@ -1,41 +1,24 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Navbar } from "./Navbar";
+import { UserMenu } from "./UserMenu";
 import { authClient } from "@/lib/auth-client";
 
 // Mock authClient
 vi.mock("@/lib/auth-client", () => ({
   authClient: {
-    useSession: vi.fn(),
     signOut: vi.fn(),
   },
 }));
 
-describe("Navbar", () => {
+describe("UserMenu", () => {
+  const mockUser = { name: "Jane Doe", email: "jane@example.com" };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("renders sign in link for guest users", () => {
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: null,
-      isPending: false,
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    render(<Navbar />);
-    
-    expect(screen.getByText("Sign In")).toBeDefined();
-  });
-
-  it("renders user name and toggles menu for signed in users", () => {
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: {
-        user: { name: "Jane Doe", email: "jane@example.com" },
-      },
-      isPending: false,
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    render(<Navbar />);
+  it("renders user name and toggles menu", () => {
+    render(<UserMenu user={mockUser} />);
     
     const userButton = screen.getByText("Jane Doe");
     expect(userButton).toBeDefined();
@@ -51,5 +34,20 @@ describe("Navbar", () => {
     // Click to close
     fireEvent.click(userButton);
     expect(screen.queryByText("Settings")).toBeNull();
+  });
+
+  it("calls signOut when clicking sign out in the menu", async () => {
+    vi.mocked(authClient.signOut).mockResolvedValue({ 
+      data: null,
+      error: null 
+    } as unknown as ReturnType<typeof authClient.signOut>);
+
+    render(<UserMenu user={mockUser} />);
+    
+    fireEvent.click(screen.getByText("Jane Doe"));
+    const signOutButton = screen.getByText("Sign Out");
+    fireEvent.click(signOutButton);
+
+    expect(authClient.signOut).toHaveBeenCalled();
   });
 });

@@ -17,7 +17,7 @@ describe("SettingsPage", () => {
     vi.clearAllMocks();
   });
 
-  it("renders user information correctly", () => {
+  it("renders user information correctly when signed in", () => {
     vi.mocked(authClient.useSession).mockReturnValue({
       data: {
         user: { name: "Jane Doe", email: "jane@example.com" },
@@ -29,6 +29,16 @@ describe("SettingsPage", () => {
     
     expect(screen.getByDisplayValue("Jane Doe")).toBeDefined();
     expect(screen.getByText("jane@example.com")).toBeDefined();
+  });
+
+  it("returns null for guest users", () => {
+    vi.mocked(authClient.useSession).mockReturnValue({
+      data: null,
+      isPending: false,
+    } as unknown as ReturnType<typeof authClient.useSession>);
+
+    const { container } = render(<SettingsPage />);
+    expect(container.firstChild).toBeNull();
   });
 
   it("calls updateUser when form is submitted", async () => {

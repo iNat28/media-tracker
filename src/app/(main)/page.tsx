@@ -6,6 +6,8 @@ import { authClient } from "@/lib/auth-client";
 export default function Home() {
   const { data: session } = authClient.useSession();
 
+  if (!session) return null;
+
   return (
     <div className="flex items-center justify-center px-6">
       <section className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -18,12 +20,10 @@ export default function Home() {
               Track what you are watching
             </h1>
           </div>
-          {session && (
-            <div className="text-right">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-tight">Signed in as</p>
-              <p className="text-sm font-semibold text-slate-900">{session.user.name}</p>
-            </div>
-          )}
+          <div className="text-right">
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-tight">Signed in as</p>
+            <p className="text-sm font-semibold text-slate-900">{session.user.name}</p>
+          </div>
         </div>
         
         <p className="mt-4 text-base text-slate-600">
@@ -34,9 +34,9 @@ export default function Home() {
         <div className="mt-8">
           <Link
             href="/movies"
-            className="inline-flex rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="inline-flex rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 h-11 flex items-center justify-center leading-none"
           >
-            Open Movie Tracker
+            <span className="translate-y-[1px]">Open Movie Tracker</span>
           </Link>
         </div>
       </section>

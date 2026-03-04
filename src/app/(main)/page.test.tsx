@@ -11,16 +11,14 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 describe("Home Page", () => {
-  it("renders correctly for guest users", () => {
+  it("returns null for guest users", () => {
     vi.mocked(authClient.useSession).mockReturnValue({
       data: null,
       isPending: false,
     } as unknown as ReturnType<typeof authClient.useSession>);
 
-    render(<Home />);
-    
-    expect(screen.getByText(/Track what you are watching/i)).toBeDefined();
-    expect(screen.queryByText(/Signed in as/i)).toBeNull();
+    const { container } = render(<Home />);
+    expect(container.firstChild).toBeNull();
   });
 
   it("renders correctly for signed in users", () => {
@@ -33,7 +31,7 @@ describe("Home Page", () => {
 
     render(<Home />);
     
+    expect(screen.getByText(/Track what you are watching/i)).toBeDefined();
     expect(screen.getByText(/John Doe/i)).toBeDefined();
-    expect(screen.getByText(/Signed in as/i)).toBeDefined();
   });
 });
