@@ -83,8 +83,9 @@ export default function SignInPage() {
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                     {isSignUp && (
                         <div>
-                            <label className="block text-sm font-medium text-slate-700">Name</label>
+                            <label htmlFor="name" className="block text-sm font-medium text-slate-700">Name</label>
                             <input
+                                id="name"
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
@@ -94,8 +95,9 @@ export default function SignInPage() {
                         </div>
                     )}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700">Email</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email</label>
                         <input
+                            id="email"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -104,8 +106,9 @@ export default function SignInPage() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700">Password</label>
+                        <label htmlFor="password" className="block text-sm font-medium text-slate-700">Password</label>
                         <input
+                            id="password"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
