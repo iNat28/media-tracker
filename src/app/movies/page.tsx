@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type CatalogItem = {
   id: number;
@@ -96,8 +99,15 @@ const createMockCatalog = (count: number): CatalogItem[] => {
 const sampleCatalog: CatalogItem[] = createMockCatalog(1000);
 
 export default function MoviesPage() {
+  const { data: session, isPending } = authClient.useSession();
   const [query, setQuery] = useState("");
   const [myList, setMyList] = useState<ListItem[]>([]);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await authClient.signOut();
+    router.push("/");
+  };
 
   const filteredCatalog = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -133,6 +143,33 @@ export default function MoviesPage() {
 
   return (
     <main className="min-h-screen bg-slate-100 px-6 py-8">
+      <div className="mx-auto max-w-6xl mb-6 flex justify-between items-center">
+        <div>
+          <Link href="/" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition">← Back to Home</Link>
+        </div>
+        <div>
+          {isPending ? (
+            <p className="text-sm text-slate-500">Checking session...</p>
+          ) : session ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-slate-700">Hello, {session.user.name}</span>
+              <button
+                onClick={handleLogout}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/sign-in"
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+            >
+              Sign In
+            </Link>
+          )}
+        </div>
+      </div>
       <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[2fr_1fr]">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-3xl font-semibold text-slate-900">Movies & TV</h1>

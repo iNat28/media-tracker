@@ -14,12 +14,20 @@ export default function Home() {
           Start with movies and TV. Search a sample catalog and add titles to
           your personal list.
         </p>
-        <Link
-          href="/movies"
-          className="mt-8 inline-flex rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
-        >
-          Open Movie Tracker
-        </Link>
+        <div className="mt-8 flex gap-4">
+          <Link
+            href="/movies"
+            className="inline-flex rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+          >
+            Open Movie Tracker
+          </Link>
+          <Link
+            href="/sign-in"
+            className="inline-flex rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            Sign In
+          </Link>
+        </div>
       </section>
     </main>
   );

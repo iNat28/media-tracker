@@ -11,7 +11,11 @@
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
+    "@better-auth/prisma-adapter": "^1.5.3",
+    "@neondatabase/serverless": "^1.0.2",
+    "@prisma/adapter-neon": "^7.4.2",
     "@prisma/client": "^7.4.2",
+    "better-auth": "^1.5.3",
     "next": "16.1.6",
     "prisma": "^7.4.2",
     "react": "19.2.3",
