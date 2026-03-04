@@ -43,8 +43,8 @@ export default function SignInPage() {
                     router.push("/movies");
                 }
             }
-        } catch (err: any) {
-            setError("Something went wrong. Please try again.");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -58,8 +58,8 @@ export default function SignInPage() {
                 provider: "google",
                 callbackURL: "/movies",
             });
-        } catch (err: any) {
-            setError("Google sign in failed.");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Google sign in failed.");
             setLoading(false);
         }
     };
