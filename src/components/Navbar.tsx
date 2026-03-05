@@ -22,6 +22,10 @@ export function Navbar() {
           <Link href="/movies" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">
             Movies
           </Link>
+
+          <Link href="/tv" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">
+            TV Shows
+          </Link>
           
           <div className="h-4 w-px bg-slate-200" />
           

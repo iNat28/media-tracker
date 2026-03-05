@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import MoviesPage from "./page";
 import { authClient } from "@/lib/auth-client";
+import { MediaItem } from "@/components/MediaSearch";
 
 // Mock authClient
 vi.mock("@/lib/auth-client", () => ({
@@ -10,12 +11,19 @@ vi.mock("@/lib/auth-client", () => ({
   },
 }));
 
-// Mock the catalog with a small set for fast testing
-vi.mock("@/lib/mock-catalog", () => ({
-  sampleCatalog: [
-    { id: 1, title: "Neon Movie", year: 2024, type: "Movie", genre: "Sci-Fi" },
-    { id: 2, title: "Other Film", year: 2023, type: "Movie", genre: "Drama" },
-  ],
+interface MediaSearchProps {
+  onAddToMyList: (item: MediaItem) => void;
+}
+
+// Mock MediaSearch to avoid actual fetching
+vi.mock("@/components/MediaSearch", () => ({
+  MediaSearch: ({ onAddToMyList }: MediaSearchProps) => (
+    <div>
+      <button onClick={() => onAddToMyList({ id: 1, title: "Neon Movie", year: 2024, type: "Movie" })}>
+        Add Neon Movie
+      </button>
+    </div>
+  ),
 }));
 
 describe("MoviesPage", () => {
@@ -33,20 +41,7 @@ describe("MoviesPage", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders the movies search page when signed in", () => {
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: {
-        user: { name: "Jane Doe" },
-      },
-      isPending: false,
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    render(<MoviesPage />);
-    expect(screen.getByText(/Movies & TV/i)).toBeDefined();
-    expect(screen.getByLabelText(/Search sample catalog/i)).toBeDefined();
-  });
-
-  it("allows searching for movies", async () => {
+  it("renders the movies page and adds/removes movies", () => {
     vi.mocked(authClient.useSession).mockReturnValue({
       data: {
         user: { name: "Jane Doe" },
@@ -56,31 +51,12 @@ describe("MoviesPage", () => {
 
     render(<MoviesPage />);
     
-    const searchInput = screen.getByLabelText(/Search sample catalog/i);
-    fireEvent.change(searchInput, { target: { value: "Neon" } });
-
-    expect(screen.getByText(/Neon Movie/i)).toBeDefined();
-    expect(screen.queryByText(/Other Film/i)).toBeNull();
-  });
-
-  it("adds and removes movies from the list", () => {
-    vi.mocked(authClient.useSession).mockReturnValue({
-      data: {
-        user: { name: "Jane Doe" },
-      },
-      isPending: false,
-    } as unknown as ReturnType<typeof authClient.useSession>);
-
-    render(<MoviesPage />);
-    
-    // Add the first movie found
-    const addButtons = screen.getAllByRole("button", { name: /add to my list/i });
-    fireEvent.click(addButtons[0]);
+    // Add a movie via the mocked MediaSearch
+    const addButton = screen.getByRole("button", { name: /Add Neon Movie/i });
+    fireEvent.click(addButton);
 
     // Check if it appears in "My List"
-    expect(screen.getByText((content) => {
-      return content.includes("1") && content.includes("title") && content.includes("added");
-    })).toBeDefined();
+    expect(screen.getByText("Neon Movie")).toBeDefined();
     
     // Remove it
     const removeButton = screen.getByRole("button", { name: /remove/i });

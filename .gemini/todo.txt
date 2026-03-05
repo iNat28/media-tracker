@@ -1,0 +1,15 @@
+[COMPLETED] 1. You need to update the application so the movies page will using TMDB 
+- Only display a small amount first, as to not overwhelm a user's computer. They should be sorted by the most popular movies right now.
+- include the movie images
+- create a similar page for TV shows
+
+I add the following EV in the .env and .dev.vars files: 
+- TMDB's API Read Access Token as TMDB_TOKEN
+- OMDB_TOKEN with the OMDB key
+
+For each feature, make sure to add unit testing and cypress testing to make sure they work well. 
+Please also reuse components, such as reusing components that are already made, and reusing them for the TV show page and the movies page.
+Please make sure to lint and test all the code, and continue to fix it. 
+After a successful run of linting and testing, please commit the code with a relevant commit message, then check this file (.gemini/todo.txt) to see what to do next. 
+When you are done, please refer back to this file (.gemini/todo.txt) to make sure you have completed everything.
+If you see that you are running into major issues that you cannot resolve yourself, please stop and alert me.
