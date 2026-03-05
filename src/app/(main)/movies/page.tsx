@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CatalogItem, sampleCatalog } from "@/lib/mock-catalog";
 import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/Input";
@@ -10,6 +10,11 @@ import { Select } from "@/components/ui/Select";
 type WatchStatus = "plan-to-watch" | "watching" | "watched";
 
 type ListItem = CatalogItem & {
+  status: WatchStatus;
+};
+
+type ApiListItem = {
+  catalogId: number;
   status: WatchStatus;
 };
 
@@ -23,6 +28,14 @@ export default function MoviesPage() {
   const { data: session } = authClient.useSession();
   const [query, setQuery] = useState("");
   const [myList, setMyList] = useState<ListItem[]>([]);
+  const [isListLoading, setIsListLoading] = useState(false);
+  const [isMutating, setIsMutating] = useState<number[]>([]);
+  const [listError, setListError] = useState<string | null>(null);
+
+  const catalogById = useMemo(
+    () => new Map(sampleCatalog.map((item) => [item.id, item])),
+    [],
+  );
 
   const filteredCatalog = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -36,7 +49,55 @@ export default function MoviesPage() {
     );
   }, [query]);
 
-  const addToList = (item: CatalogItem) => {
+  const fetchList = useCallback(async () => {
+    if (!session) return;
+
+    setIsListLoading(true);
+    setListError(null);
+
+    try {
+      const response = await fetch("/api/my-list", { method: "GET" });
+      if (!response.ok) {
+        throw new Error("Failed to load your list");
+      }
+
+      const payload = (await response.json()) as { items?: ApiListItem[] };
+      const mappedItems =
+        payload.items
+          ?.map((entry) => {
+            const catalogItem = catalogById.get(entry.catalogId);
+            if (!catalogItem) return null;
+
+            return { ...catalogItem, status: entry.status };
+          })
+          .filter((entry): entry is ListItem => entry !== null) ?? [];
+
+      setMyList(mappedItems);
+    } catch {
+      setListError("Could not load your list right now.");
+    } finally {
+      setIsListLoading(false);
+    }
+  }, [catalogById, session]);
+
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
+
+  const addPending = (itemId: number) => {
+    setIsMutating((current) => (current.includes(itemId) ? current : [...current, itemId]));
+  };
+
+  const removePending = (itemId: number) => {
+    setIsMutating((current) => current.filter((id) => id !== itemId));
+  };
+
+  const addToList = async (item: CatalogItem) => {
+    if (isMutating.includes(item.id)) return;
+
+    setListError(null);
+    addPending(item.id);
+
     setMyList((currentList) => {
       if (currentList.some((currentItem) => currentItem.id === item.id)) {
         return currentList;
@@ -44,16 +105,83 @@ export default function MoviesPage() {
 
       return [...currentList, { ...item, status: "plan-to-watch" }];
     });
+
+    try {
+      const response = await fetch("/api/my-list", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ catalogId: item.id, status: "plan-to-watch" }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add item");
+      }
+    } catch {
+      setMyList((currentList) => currentList.filter((currentItem) => currentItem.id !== item.id));
+      setListError("Could not add item to your list.");
+    } finally {
+      removePending(item.id);
+    }
   };
 
-  const updateStatus = (itemId: number, status: WatchStatus) => {
+  const updateStatus = async (itemId: number, status: WatchStatus) => {
+    if (isMutating.includes(itemId)) return;
+
+    const previousStatus = myList.find((item) => item.id === itemId)?.status;
+    if (!previousStatus || previousStatus === status) return;
+
+    setListError(null);
+    addPending(itemId);
     setMyList((currentList) =>
       currentList.map((item) => (item.id === itemId ? { ...item, status } : item)),
     );
+
+    try {
+      const response = await fetch("/api/my-list", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ catalogId: itemId, status }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update item");
+      }
+    } catch {
+      setMyList((currentList) =>
+        currentList.map((item) => (item.id === itemId ? { ...item, status: previousStatus } : item)),
+      );
+      setListError("Could not update item status.");
+    } finally {
+      removePending(itemId);
+    }
   };
 
-  const removeFromList = (itemId: number) => {
+  const removeFromList = async (itemId: number) => {
+    if (isMutating.includes(itemId)) return;
+
+    const previousItem = myList.find((item) => item.id === itemId);
+    if (!previousItem) return;
+
+    setListError(null);
+    addPending(itemId);
     setMyList((currentList) => currentList.filter((item) => item.id !== itemId));
+
+    try {
+      const response = await fetch("/api/my-list", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ catalogId: itemId }),
+      });
+
+      if (!response.ok && response.status !== 204) {
+        throw new Error("Failed to remove item");
+      }
+    } catch {
+      setMyList((currentList) => [...currentList, previousItem]);
+      setListError("Could not remove item from your list.");
+    } finally {
+      removePending(itemId);
+    }
   };
 
   if (!session) return null;
@@ -82,6 +210,7 @@ export default function MoviesPage() {
           <ul className="grid gap-3">
             {filteredCatalog.map((item) => {
               const isInMyList = myList.some((listItem) => listItem.id === item.id);
+              const isPending = isMutating.includes(item.id);
 
               return (
                 <li
@@ -97,10 +226,10 @@ export default function MoviesPage() {
                   <Button
                     size="md"
                     onClick={() => addToList(item)}
-                    disabled={isInMyList}
+                    disabled={isInMyList || isPending}
                     className="w-auto px-6"
                   >
-                    {isInMyList ? "Added" : "Add to My List"}
+                    {isPending ? "Saving..." : isInMyList ? "Added" : "Add to My List"}
                   </Button>
                 </li>
               );
@@ -113,6 +242,12 @@ export default function MoviesPage() {
             No matches found for your search.
           </p>
         ) : null}
+
+        {listError ? (
+          <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {listError}
+          </p>
+        ) : null}
       </section>
 
       <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm self-start">
@@ -121,7 +256,11 @@ export default function MoviesPage() {
           {myList.length} {myList.length === 1 ? "title" : "titles"} added
         </p>
 
-        {myList.length === 0 ? (
+        {isListLoading ? (
+          <p className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Loading your list...
+          </p>
+        ) : myList.length === 0 ? (
           <p className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
             Your list is empty. Add a movie or TV show from the catalog.
           </p>
@@ -140,6 +279,7 @@ export default function MoviesPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => removeFromList(item.id)}
+                    disabled={isMutating.includes(item.id)}
                     className="px-2 py-1 text-[10px] w-auto h-auto leading-none min-h-0"
                   >
                     Remove
@@ -152,6 +292,7 @@ export default function MoviesPage() {
                     value={item.status}
                     onChange={(event) => updateStatus(item.id, event.target.value as WatchStatus)}
                     options={STATUS_OPTIONS}
+                    disabled={isMutating.includes(item.id)}
                   />
                 </div>
               </li>

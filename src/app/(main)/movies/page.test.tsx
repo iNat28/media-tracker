@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import MoviesPage from "./page";
 import { authClient } from "@/lib/auth-client";
 
@@ -21,6 +21,32 @@ vi.mock("@/lib/mock-catalog", () => ({
 describe("MoviesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const method = init?.method ?? "GET";
+
+        if (method === "GET") {
+          return new Response(JSON.stringify({ items: [] }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        if (method === "DELETE") {
+          return new Response(null, { status: 204 });
+        }
+
+        return new Response(JSON.stringify({ item: { catalogId: 1, status: "plan-to-watch" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("returns null for guest users", () => {
@@ -33,7 +59,7 @@ describe("MoviesPage", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders the movies search page when signed in", () => {
+  it("renders the movies search page when signed in", async () => {
     vi.mocked(authClient.useSession).mockReturnValue({
       data: {
         user: { name: "Jane Doe" },
@@ -42,6 +68,7 @@ describe("MoviesPage", () => {
     } as unknown as ReturnType<typeof authClient.useSession>);
 
     render(<MoviesPage />);
+    await screen.findByText(/your list is empty/i);
     expect(screen.getByText(/Movies & TV/i)).toBeDefined();
     expect(screen.getByLabelText(/Search sample catalog/i)).toBeDefined();
   });
@@ -55,6 +82,7 @@ describe("MoviesPage", () => {
     } as unknown as ReturnType<typeof authClient.useSession>);
 
     render(<MoviesPage />);
+    await screen.findByText(/your list is empty/i);
     
     const searchInput = screen.getByLabelText(/Search sample catalog/i);
     fireEvent.change(searchInput, { target: { value: "Neon" } });
@@ -63,7 +91,7 @@ describe("MoviesPage", () => {
     expect(screen.queryByText(/Other Film/i)).toBeNull();
   });
 
-  it("adds and removes movies from the list", () => {
+  it("adds and removes movies from the list", async () => {
     vi.mocked(authClient.useSession).mockReturnValue({
       data: {
         user: { name: "Jane Doe" },
@@ -72,21 +100,26 @@ describe("MoviesPage", () => {
     } as unknown as ReturnType<typeof authClient.useSession>);
 
     render(<MoviesPage />);
+    await screen.findByText(/your list is empty/i);
     
     // Add the first movie found
     const addButtons = screen.getAllByRole("button", { name: /add to my list/i });
     fireEvent.click(addButtons[0]);
 
     // Check if it appears in "My List"
-    expect(screen.getByText((content) => {
-      return content.includes("1") && content.includes("title") && content.includes("added");
-    })).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText((content) => {
+        return content.includes("1") && content.includes("title") && content.includes("added");
+      })).toBeDefined();
+    });
     
     // Remove it
     const removeButton = screen.getByRole("button", { name: /remove/i });
     fireEvent.click(removeButton);
 
     // Check if list is empty again
-    expect(screen.getByText(/your list is empty/i)).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText(/your list is empty/i)).toBeDefined();
+    });
   });
 });
