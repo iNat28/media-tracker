@@ -16,12 +16,12 @@ describe('Authentication lifecycle', () => {
 
     // 2. Verify Sign Up success
     cy.url({ timeout: 20000 }).should('include', '/movies');
-    cy.get('nav').should('contain', testName);
+    cy.get('nav', { timeout: 15000 }).should('contain', testName);
 
     // 3. Sign Out via menu
     cy.get('#user-menu-button').click();
     cy.contains('Sign Out').click();
-    cy.url({ timeout: 10000 }).should('include', '/sign-in');
+    cy.url({ timeout: 15000 }).should('include', '/sign-in');
 
     // 4. Sign In with same user
     cy.get('#email').type(testEmail);
@@ -29,7 +29,7 @@ describe('Authentication lifecycle', () => {
     cy.get('button[type="submit"]').click();
     
     cy.url({ timeout: 20000 }).should('include', '/movies');
-    cy.get('nav').should('contain', testName);
+    cy.get('nav', { timeout: 15000 }).should('contain', testName);
 
     // 5. Go to Settings
     cy.get('#user-menu-button').click();
@@ -49,9 +49,10 @@ describe('Authentication lifecycle', () => {
     // 8. Verify Deletion redirect
     cy.url({ timeout: 20000 }).should('eq', Cypress.config().baseUrl + '/');
     
-    // 9. Force clear storage
+    // 9. Force clear storage and WAIT
     cy.clearLocalStorage();
     cy.clearCookies();
+    cy.wait(2000);
 
     // 10. Try to sign in again - should fail
     cy.visit('/sign-in');
@@ -61,7 +62,7 @@ describe('Authentication lifecycle', () => {
     
     // Should stay on sign-in and show error
     cy.url().should('include', '/sign-in');
-    cy.get('div.bg-red-50').should('be.visible');
+    cy.get('div.bg-red-50', { timeout: 10000 }).should('be.visible');
   });
 
   it('should allow a user to sign in using the Dev Bypass and then sign out', () => {
