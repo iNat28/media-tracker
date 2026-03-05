@@ -3,6 +3,27 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 
+interface ExternalRatingInput {
+  source: string;
+  value: string;
+}
+
+interface MediaItemInput {
+  id: number;
+  title: string;
+  type: string;
+  poster_path?: string | null;
+  year?: string | number | null;
+  ratings?: ExternalRatingInput[];
+}
+
+interface WatchlistPostRequest {
+  mediaItem: MediaItemInput;
+  status?: string;
+  rating?: number | null;
+  notes?: string | null;
+}
+
 export async function GET() {
   const session = await auth.api.getSession({
     headers: await headers()
@@ -22,7 +43,7 @@ export async function GET() {
           }
         }
       },
-      orderBy: { updatedAt: "desc" }
+      orderBy: { watchedAt: "desc" }
     });
 
     return NextResponse.json(watchLogs);
@@ -42,23 +63,28 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { mediaItem, status, rating, notes } = await request.json();
+    const body = (await request.json()) as WatchlistPostRequest;
+    const { mediaItem, status, rating, notes } = body;
+
+    const parsedYear = typeof mediaItem.year === 'number' 
+      ? mediaItem.year 
+      : (mediaItem.year ? parseInt(String(mediaItem.year), 10) : null);
 
     // 1. Ensure MediaItem exists in our DB
-    const dbMediaItem = await prisma.mediaItem.upsert({
+    const dbMedia = await prisma.mediaItem.upsert({
       where: { id: mediaItem.id },
       update: {
         title: mediaItem.title,
-        type: mediaItem.type.toLowerCase() === "movie" ? "movie" : "tv",
+        type: mediaItem.type.toLowerCase() === "movie" ? "MOVIE" : "TV",
         posterPath: mediaItem.poster_path,
-        year: typeof mediaItem.year === 'number' ? mediaItem.year : parseInt(mediaItem.year, 10) || null,
+        year: parsedYear,
       },
       create: {
         id: mediaItem.id,
         title: mediaItem.title,
-        type: mediaItem.type.toLowerCase() === "movie" ? "movie" : "tv",
+        type: mediaItem.type.toLowerCase() === "movie" ? "MOVIE" : "TV",
         posterPath: mediaItem.poster_path,
-        year: typeof mediaItem.year === 'number' ? mediaItem.year : parseInt(mediaItem.year, 10) || null,
+        year: parsedYear,
       }
     });
 
@@ -68,13 +94,13 @@ export async function POST(request: NextRequest) {
         await prisma.rating.upsert({
           where: {
             mediaId_source: {
-              mediaId: dbMediaItem.id,
+              mediaId: dbMedia.id,
               source: r.source
             }
           },
           update: { value: r.value },
           create: {
-            mediaId: dbMediaItem.id,
+            mediaId: dbMedia.id,
             source: r.source,
             value: r.value
           }
@@ -87,18 +113,18 @@ export async function POST(request: NextRequest) {
       where: {
         userId_mediaId: {
           userId: session.user.id,
-          mediaId: dbMediaItem.id
+          mediaId: dbMedia.id
         }
       },
       update: {
-        status: status || "plan-to-watch",
+        status: status ? status.toUpperCase().replace(/-/g, '_') : "PLAN_TO_WATCH",
         rating: rating !== undefined ? rating : undefined,
         notes: notes || undefined,
       },
       create: {
         userId: session.user.id,
-        mediaId: dbMediaItem.id,
-        status: status || "plan-to-watch",
+        mediaId: dbMedia.id,
+        status: status ? status.toUpperCase().replace(/-/g, '_') : "PLAN_TO_WATCH",
         rating: rating !== undefined ? rating : null,
         notes: notes || null,
       }
@@ -121,7 +147,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const { mediaId } = await request.json();
+    const { mediaId } = (await request.json()) as { mediaId: number };
 
     await prisma.watchLog.delete({
       where: {
