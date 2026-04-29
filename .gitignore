@@ -46,3 +46,6 @@ next-env.d.ts
 .env*.local
 .dev.vars
 /.open-next
+/.gemini
+cypress/screenshots
+.geminiignore
