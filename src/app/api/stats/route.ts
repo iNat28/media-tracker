@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { headers } from "next/headers";
-import { WatchStatus } from "@prisma/client";
+import { WatchStatus } from '@prisma/client/edge';
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });

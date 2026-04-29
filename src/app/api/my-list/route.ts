@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { WatchStatus } from "@prisma/client";
+import { WatchStatus } from '@prisma/client/edge';
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
